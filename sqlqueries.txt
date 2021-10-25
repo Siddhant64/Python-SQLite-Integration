@@ -1,0 +1,57 @@
+CREATE VIEW ActiveProducts AS 
+select sid, lister, products.pid, edate, products.descr as pdescr, cond, rprice, sales.descr as sdescr, rid, reviewer, rating, rtext, rdate from sales, products LEFT OUTER JOIN previews ON previews.pid = products.pid WHERE sales.pid = products.pid and julianday(edate) > julianday('now');
+
+Q1) select pid, pdescr, COUNT(distinct rid) as numreviews, AVG(rating) as avgrating, COUNT(distinct sid) as activesales from ActiveProducts GROUP BY pid ORDER BY activesales DESC;
+
+1)a) INSERT INTO previews VALUES ('rid', 'pid', 'reviewer', 'rating', 'rtext', date('now'));
+
+1)b) SELECT rtext from ActiveProducts WHERE pid = 'pid' AND rid NOT NULL;
+
+c) SELECT sid from ActiveProducts ORDER BY edate ASC;
+SELECT 
+
+
+Q2)
+SELECT sid, lister, descr, price, TimeRemaining, COUNT(sid) from (
+SELECT * from SalesFormat LEFT OUTER JOIN products on SalesFormat.pid = products.pid WHERE SalesFormat.descr LIKE '%k1%' or products.descr LIKE '%k1%'
+UNION ALL
+SELECT * from SalesFormat LEFT OUTER JOIN products on SalesFormat.pid = products.pid WHERE SalesFormat.descr LIKE '%k2%' or products.descr LIKE '%k2%'
+...
+...
+...
+UNION ALL
+SELECT * from SalesFormat LEFT OUTER JOIN products on SalesFormat.pid = products.pid WHERE SalesFormat.descr LIKE '%k3%' or products.descr LIKE '%k3%'
+)
+GROUP BY sid, lister, descr, price, TimeRemaining ORDER BY COUNT(sid) DESC;
+
+Q3)
+CREATE VIEW IF NOT EXISTS SalesFormat AS
+select sales.sid, sales.pid, lister, descr, ifnull(MAX(amount), rprice) AS price, strftime('%d %H:%M', julianday(edate) - julianday('now')) as TimeRemaining from sales LEFT OUTER JOIN bids ON sales.sid = bids.sid WHERE julianday(edate) > julianday('now') GROUP BY sales.sid, sales.pid, lister, descr, rprice;
+
+
+
+
+
+list_products:
+	select pid, pdescr, COUNT(distinct rid) as numreviews, AVG(rating) as avgrating, COUNT(distinct sid) as activesales, sdescr, ifnull((select max(amount) from bids where bids.sid = ActiveProducts.sid),rprice) as 'max_bid/reserve_price', strftime('%d %H-%M', julianday(edate) - julianday('now')) as Time_remaining from ActiveProducts GROUP BY pid ORDER BY activesales DESC;
+after selecting a sale:
+	select lister, ActiveProducts.rating, COUNT(distinct ActiveProducts.rid) as numreviews, AVG(ActiveProducts.rating) as avgrating, sdescr, edate, strftime('%d %H:%M', julianday(edate) - julianday('now')) as Time_remaining, cond, ifnull((select max(amount) from bids where bids.sid = ActiveProducts.sid),rprice) as 'max_bid/reserve_price',ifnull(pdescr, 'Product not listed') as p_descr, (select count(*) from previews where ActiveProducts.pid = previews.pid) as num_prev, (select avg(rating) from previews where ActiveProducts.pid = previews.pid) as avg_pratings from ActiveProducts where pid = 'userValue' group by ActiveProducts.pid;
+
+a) 
+	insert into bids values('bid','user_email', 'sid', 'bdate', 'amount');
+b)
+	 select * from sales where sales.lister = 'value obtained from active listings using pid' and date(edate) > date('now') order by strftime('%d %H-%M', julianday(edate) - julianday('now')) ASC; 
+
+c) 
+
+	select * from reviews where reviewee = 'seller email obtained userselected record';	
+
+Q4) insert into sales values ('sid', 'userid', 'pid', date('YYYY-MM-DD'), 'descr', 'condition', rprice);
+
+Q5)
+ main : select email,name,city from users where users.name like "%j%" or users.email like "%j%";
+
+5 a) easy query line
+
+5.b)select * from sales where sales.lister = 'user_email' and julianday(edate) > julianday('now');
+c)  select * from reviews where reviewee = 'sale email obtained through python';
